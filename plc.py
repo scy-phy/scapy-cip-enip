@@ -63,6 +63,10 @@ class PLCClient(object):
             reply_pkt = self.recv_enippkt()
             self.session_id = reply_pkt.session
 
+    @property
+    def connected(self):
+        return True if self.sock else False
+
     def send_rr_cip(self, cippkt):
         """Send a CIP packet over the TCP connection as an ENIP Req/Rep Data"""
         enippkt = ENIP_TCP(session=self.session_id)
@@ -112,6 +116,8 @@ class PLCClient(object):
         cippkt /= CIP_ReqForwardOpen(path_wordsize=3, path=b"\x01\x00\x20\x02\x24\x01")
         self.send_rr_cip(cippkt)
         resppkt = self.recv_enippkt()
+        if self.sock is None:
+            return
         cippkt = resppkt[CIP]
         if cippkt.status[0].status != 0:
             logger.error("Failed to Forward Open CIP connection: %r", cippkt.status[0])
@@ -125,6 +131,8 @@ class PLCClient(object):
         cippkt = CIP(service=0x4e, path=CIP_Path(wordsize=2, path=b'\x20\x06\x24\x01'))
         cippkt /= CIP_ReqForwardClose(path_wordsize=3, path=b"\x01\x00\x20\x02\x24\x01")
         self.send_rr_cip(cippkt)
+        if self.sock is None:
+            return
         resppkt = self.recv_enippkt()
         cippkt = resppkt[CIP]
         if cippkt.status[0].status != 0:
@@ -140,6 +148,8 @@ class PLCClient(object):
         path = CIP_Path.make(class_id=class_id, instance_id=instance)
         cippkt = CIP(path=path)/CIP_ReqGetAttributeList(attrs=[attr])
         self.send_rr_cm_cip(cippkt)
+        if self.sock is None:
+            return
         resppkt = self.recv_enippkt()
         cippkt = resppkt[CIP]
         if cippkt.status[0].status != 0:
@@ -157,6 +167,8 @@ class PLCClient(object):
         # User CIP service 4: Set_Attribute_List
         cippkt = CIP(service=4, path=path)/scapy_all.Raw(load=struct.pack('<HH', 1, attr) + value)
         self.send_rr_cm_cip(cippkt)
+        if self.sock is None:
+            return
         resppkt = self.recv_enippkt()
         cippkt = resppkt[CIP]
         if cippkt.status[0].status != 0:
@@ -171,6 +183,8 @@ class PLCClient(object):
         while True:
             cippkt = CIP(service=0x4b, path=CIP_Path.make(class_id=class_id, instance_id=start_instance))
             self.send_rr_cm_cip(cippkt)
+            if self.sock is None:
+                return
             resppkt = self.recv_enippkt()
 
             # Decode a list of 32-bit integers
@@ -198,6 +212,8 @@ class PLCClient(object):
             cippkt = CIP(service=0x4c, path=CIP_Path.make(class_id=class_id, instance_id=instance_id))
             cippkt /= CIP_ReqReadOtherTag(start=offset, length=remaining_size)
             self.send_rr_cm_cip(cippkt)
+            if self.sock is None:
+                return
             resppkt = self.recv_enippkt()
 
             cipstatus = resppkt[CIP].status[0].status
