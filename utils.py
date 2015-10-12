@@ -25,6 +25,7 @@ from scapy import all as scapy_all
 
 def hexdump(data, columns=16, indentlvl=""):
     """Return the hexadecimal representation of the data"""
+
     def do_line(line):
         return (
             indentlvl +
@@ -32,6 +33,7 @@ def hexdump(data, columns=16, indentlvl=""):
             "   " * (columns - len(line)) +
             "  " +
             "".join(b if 32 <= ord(b) < 127 else "." for b in line))
+
     return "\n".join(do_line(data[i:i + columns]) for i in range(0, len(data), columns))
 
 
