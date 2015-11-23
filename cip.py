@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015 Nicolas Iooss, SUTD
+# Copyright (c) 2015 Nicolas Iooss, SUTD; David I. Urbina, UTD
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,11 @@ Documentation:
 Wireshark implementation:
 https://code.wireshark.org/review/gitweb?p=wireshark.git;a=blob;f=epan/dissectors/packet-cip.c
 """
-from scapy import all as scapy_all
 import struct
 import sys
+
+from scapy import all as scapy_all
+
 import enip_tcp
 import utils
 
@@ -136,7 +138,6 @@ class CIP_ReqReadOtherTag(scapy_all.Packet):
 
 
 class CIP_PathField(scapy_all.StrLenField):
-
     SEGMENT_TYPES = {
         0: "class",  # 0x20 = 8-bit class ID, 0x21 = 16-bit class ID
         1: "instance",  # 0x24 = 8-bit instance ID, 0x25 = 16-bit instance ID
@@ -341,31 +342,34 @@ class CIP_ResponseStatus(scapy_all.Packet):
 
 class CIP(scapy_all.Packet):
     name = "CIP"
+
+    SERVICE_CODES = {
+        0x01: "Get_Attribute_All",
+        0x02: "Set_Attribute_All",
+        0x03: "Get_Attribute_List",
+        0x04: "Set_Attribute_List",
+        0x05: "Reset",
+        0x06: "Start",
+        0x07: "Stop",
+        0x08: "Create",
+        0x09: "Delete",
+        0x0a: "Multiple_Service_Packet",
+        0x0d: "Apply_attributes",
+        0x0e: "Get_Attribute_Single",
+        0x10: "Set_Attribute_Single",
+        0x4b: "Execute_PCCC_Service",  # PCCC = Programmable Controller Communication Commands
+        0x4c: "Read_Tag_Service",
+        0x4d: "Write_Tag_Service",
+        0x4e: "Read_Modify_Write_Tag_Service",
+        0x4f: "Read_Other_Tag_Service",  # ???
+        0x52: "Read_Tag_Fragmented_Service",
+        0x53: "Write_Tag_Fragmented_Service",
+        0x54: "Forward_Open?",
+    }
+
     fields_desc = [
         scapy_all.BitEnumField("direction", None, 1, {0: "request", 1: "response"}),
-        utils.XBitEnumField("service", 0, 7, {
-            0x01: "Get_Attribute_All",
-            0x02: "Set_Attribute_All",
-            0x03: "Get_Attribute_List",
-            0x04: "Set_Attribute_List",
-            0x05: "Reset",
-            0x06: "Start",
-            0x07: "Stop",
-            0x08: "Create",
-            0x09: "Delete",
-            0x0a: "Multiple_Service_Packet",
-            0x0d: "Apply_attributes",
-            0x0e: "Get_Attribute_Single",
-            0x10: "Set_Attribute_Single",
-            0x4b: "Execute_PCCC_Service",  # PCCC = Programmable Controller Communication Commands
-            0x4c: "Read_Tag_Service",
-            0x4d: "Write_Tag_Service",
-            0x4e: "Read_Modify_Write_Tag_Service",
-            0x4f: "Read_Other_Tag_Service", # ???
-            0x52: "Read_Tag_Fragmented_Service",
-            0x53: "Write_Tag_Fragmented_Service",
-            0x54: "Forward_Open?",
-        }),
+        utils.XBitEnumField("service", 0, 7, SERVICE_CODES),
         scapy_all.PacketListField("path", [], CIP_Path,
                                   count_from=lambda p: 1 if p.direction == 0 else 0),
         scapy_all.PacketListField("status", [], CIP_ResponseStatus,
@@ -423,11 +427,37 @@ class _CIPMSPPacketList(scapy_all.PacketListField):
         return "", lst
 
 
+class CIP_ConnectionParam(scapy_all.Packet):
+    """CIP Connection parameters"""
+    name = "CIP_ConnectionParam"
+    fields_desc = [
+        scapy_all.BitEnumField("owner", 0, 1, {0: "exclusive", 1: "multiple"}),
+        scapy_all.BitEnumField("connection_type", 2, 2,
+                               {0: "null", 1: "multicast", 2: "point-to-point", 3: "reserved"}),
+        scapy_all.BitField("reserved", 0, 1),
+        scapy_all.BitEnumField("priority", 0, 2, {0: "low", 1: "high", 2: "scheduled", 3: "urgent"}),
+        scapy_all.BitEnumField("connection_size_type", 0, 1, {0: "fixed", 1: "variable"}),
+        scapy_all.BitField("connection_size", 500, 9),
+    ]
+
+    def pre_dissect(self, s):
+        b = struct.unpack('<H', s[:2])[0]
+        return struct.pack('>H', int(b)) + s[2:]
+
+    def do_build(self):
+        p = ''
+        return p
+
+    def extract_padding(self, s):
+        return '', s
+
+
 class CIP_ReqForwardOpen(scapy_all.Packet):
     """Forward Open request"""
     name = "CIP_ReqForwardOpen"
     fields_desc = [
-        scapy_all.XByteField("priority_ticktime", 0),
+        scapy_all.BitField("priority", 0, 4),
+        scapy_all.BitField("tick_time", 0, 4),
         scapy_all.ByteField("timeout_ticks", 249),
         scapy_all.LEIntField("OT_network_connection_id", 0x80000031),
         scapy_all.LEIntField("TO_network_connection_id", 0x80fe0030),
@@ -435,13 +465,11 @@ class CIP_ReqForwardOpen(scapy_all.Packet):
         scapy_all.LEShortField("vendor_id", 0x004d),
         scapy_all.LEIntField("originator_serial_number", 0xdeadbeef),
         scapy_all.ByteField("connection_timeout_multiplier", 0),
-        scapy_all.XByteField("reserved1", 0),
-        scapy_all.XByteField("reserved2", 0),
-        scapy_all.XByteField("reserved3", 0),
+        scapy_all.X3BytesField("reserved", 0),
         scapy_all.LEIntField("OT_rpi", 0x007a1200),  # 8000 ms
-        scapy_all.LEShortField("OT_connection_param", 0x43f4),  # exclusive, PtP, low prio, size 500
+        scapy_all.PacketField('OT_connection_param', CIP_ConnectionParam(), CIP_ConnectionParam),
         scapy_all.LEIntField("TO_rpi", 0x007a1200),
-        scapy_all.LEShortField("TO_connection_param", 0x43f4),
+        scapy_all.PacketField('TO_connection_param', CIP_ConnectionParam(), CIP_ConnectionParam),
         scapy_all.XByteField("transport_type", 0xa3),  # direction server, application object, class 3
         scapy_all.ByteField("path_wordsize", None),
         CIP_PathField("path", None, length_from=lambda p: 2 * p.path_wordsize),
@@ -544,7 +572,6 @@ scapy_all.bind_layers(CIP, CIP_RespForwardOpen, direction=1, service=0x54)
 # Need class in path to be 6 (Connection Manager)
 scapy_all.bind_layers(CIP, CIP_ReqConnectionManager, direction=0, service=0x52)
 
-
 if __name__ == '__main__':
     # Test building/dissecting packets
     # Build a CIP Get Attribute All request
@@ -557,7 +584,7 @@ if __name__ == '__main__':
     assert pkt[CIP].path[0] == path
 
     # Build a CIP Get_Attribute_List response
-    pkt = CIP()/CIP_RespAttributesList(count=1, content="test")
+    pkt = CIP() / CIP_RespAttributesList(count=1, content="test")
     pkt = CIP(str(pkt))
     pkt.show()
     assert pkt[CIP].direction == 1
