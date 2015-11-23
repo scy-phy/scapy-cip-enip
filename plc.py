@@ -20,10 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 """Establish all what is needed to communicate with a PLC"""
-from scapy import all as scapy_all
 import logging
 import socket
 import struct
+
+from scapy import all as scapy_all
 
 from cip import CIP, CIP_Path, CIP_ReqConnectionManager, \
     CIP_MultipleServicePacket, CIP_ReqForwardOpen, CIP_RespForwardOpen, \
@@ -31,10 +32,8 @@ from cip import CIP, CIP_Path, CIP_ReqConnectionManager, \
 from enip_tcp import ENIP_TCP, ENIP_SendUnitData, ENIP_SendUnitData_Item, \
     ENIP_ConnectionAddress, ENIP_ConnectionPacket, ENIP_RegisterSession, ENIP_SendRRData
 
-
 # Global switch to make it easy to test without sending anything
 NO_NETWORK = False
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class PLCClient(object):
         self.sequence = 1
 
         # Open an Ethernet/IP session
-        sessionpkt = ENIP_TCP()/ENIP_RegisterSession()
+        sessionpkt = ENIP_TCP() / ENIP_RegisterSession()
         if self.sock is not None:
             self.sock.send(str(sessionpkt))
             reply_pkt = self.recv_enippkt()
@@ -72,7 +71,7 @@ class PLCClient(object):
         enippkt = ENIP_TCP(session=self.session_id)
         enippkt /= ENIP_SendRRData(items=[
             ENIP_SendUnitData_Item(type_id=0),
-            ENIP_SendUnitData_Item()/cippkt
+            ENIP_SendUnitData_Item() / cippkt
         ])
         if self.sock is not None:
             self.sock.send(str(enippkt))
@@ -95,8 +94,8 @@ class PLCClient(object):
         """Send a CIP packet over the TCP connection as an ENIP Unit Data"""
         enippkt = ENIP_TCP(session=self.session_id)
         enippkt /= ENIP_SendUnitData(items=[
-            ENIP_SendUnitData_Item()/ENIP_ConnectionAddress(connection_id=self.enip_connid),
-            ENIP_SendUnitData_Item()/ENIP_ConnectionPacket(sequence=self.sequence)/cippkt
+            ENIP_SendUnitData_Item() / ENIP_ConnectionAddress(connection_id=self.enip_connid),
+            ENIP_SendUnitData_Item() / ENIP_ConnectionPacket(sequence=self.sequence) / cippkt
         ])
         self.sequence += 1
         if self.sock is not None:
@@ -146,7 +145,7 @@ class PLCClient(object):
         # path = CIP_Path.make(class_id=class_id, instance_id=instance, attribute_id=attr)
         # cippkt = CIP(service=0x0e, path=path)  # Get_Attribute_Single
         path = CIP_Path.make(class_id=class_id, instance_id=instance)
-        cippkt = CIP(path=path)/CIP_ReqGetAttributeList(attrs=[attr])
+        cippkt = CIP(path=path) / CIP_ReqGetAttributeList(attrs=[attr])
         self.send_rr_cm_cip(cippkt)
         if self.sock is None:
             return
@@ -165,7 +164,7 @@ class PLCClient(object):
         """Set the value of attribute class/instance/attr"""
         path = CIP_Path.make(class_id=class_id, instance_id=instance)
         # User CIP service 4: Set_Attribute_List
-        cippkt = CIP(service=4, path=path)/scapy_all.Raw(load=struct.pack('<HH', 1, attr) + value)
+        cippkt = CIP(service=4, path=path) / scapy_all.Raw(load=struct.pack('<HH', 1, attr) + value)
         self.send_rr_cm_cip(cippkt)
         if self.sock is None:
             return

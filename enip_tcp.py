@@ -20,8 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 """Ethernet/IP over TCP scapy dissector"""
-from scapy import all as scapy_all
 import struct
+
+from scapy import all as scapy_all
+
 import utils
 
 
@@ -122,7 +124,6 @@ scapy_all.bind_layers(ENIP_TCP, ENIP_SendUnitData, command_id=0x0070)
 scapy_all.bind_layers(ENIP_SendUnitData_Item, ENIP_ConnectionAddress, type_id=0x00a1)
 scapy_all.bind_layers(ENIP_SendUnitData_Item, ENIP_ConnectionPacket, type_id=0x00b1)
 
-
 if __name__ == '__main__':
     # Test building/dissecting packets
     # Build a raw packet over ENIP
@@ -131,8 +132,8 @@ if __name__ == '__main__':
     pkt /= scapy_all.TCP(sport=10000, dport=44818)
     pkt /= ENIP_TCP()
     pkt /= ENIP_SendUnitData(items=[
-        ENIP_SendUnitData_Item()/ENIP_ConnectionAddress(connection_id=1337),
-        ENIP_SendUnitData_Item()/ENIP_ConnectionPacket(sequence=4242)/scapy_all.Raw(load='test'),
+        ENIP_SendUnitData_Item() / ENIP_ConnectionAddress(connection_id=1337),
+        ENIP_SendUnitData_Item() / ENIP_ConnectionPacket(sequence=4242) / scapy_all.Raw(load='test'),
     ])
 
     # Build!

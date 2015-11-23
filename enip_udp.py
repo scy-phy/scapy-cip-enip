@@ -24,10 +24,11 @@
 This dissector only supports a "keep-alive" kind of packet which has been seen
 in SUTD's secure water treatment testbed.
 """
-from scapy import all as scapy_all
 import struct
-import utils
 
+from scapy import all as scapy_all
+
+import utils
 
 # Keep-alive sequences
 ENIP_UDP_KEEPALIVE = (
@@ -82,7 +83,6 @@ class ENIP_UDP(scapy_all.Packet):
 scapy_all.bind_layers(scapy_all.UDP, ENIP_UDP, sport=2222, dport=2222)
 scapy_all.bind_layers(ENIP_UDP_Item, ENIP_UDP_SequencedAddress, type_id=0x8002)
 
-
 if __name__ == '__main__':
     # Test building/dissecting packets
     # Build a keep-alive packet
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     pkt /= scapy_all.IP(src='192.168.1.42', dst='239.192.18.52')
     pkt /= scapy_all.UDP(sport=2222, dport=2222)
     pkt /= ENIP_UDP(items=[
-        ENIP_UDP_Item()/ENIP_UDP_SequencedAddress(connection_id=1337, sequence=42),
-        ENIP_UDP_Item(type_id=0x00b1)/scapy_all.Raw(load=ENIP_UDP_KEEPALIVE),
+        ENIP_UDP_Item() / ENIP_UDP_SequencedAddress(connection_id=1337, sequence=42),
+        ENIP_UDP_Item(type_id=0x00b1) / scapy_all.Raw(load=ENIP_UDP_KEEPALIVE),
     ])
 
     # Build!
