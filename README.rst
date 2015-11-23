@@ -6,7 +6,7 @@ It uses scapy (http://www.secdev.org/projects/scapy/) to implement packet dissec
 These dissectors can also be used to craft packets, which allows directly communicating with the PLCs (Programmable Logic Controllers) of the network.
 
 This project has been created to help analyzing the behavior of SWaT, a water treatment testbed built at SUTD (Singapore University of Technology and Design).
-Therefore it mostly implements a subset of CIP specification, which is used in this system.
+Therefore, it mostly implements a subset of CIP specification, which is used in this system.
 
 
 Requirements
