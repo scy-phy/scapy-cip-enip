@@ -109,7 +109,7 @@ This script prints the structure of the packet with every protocol layer (Ethern
                    |         |  path      = class 0xb2,instance 0x22
                    |        \status    \
 
-Moreover each component of the packet is accessible in Python.
+Moreover, each component of the packet is accessible in Python.
 For example, adding ``print(pkt[cip.CIP].path)`` at the end of the script shows the path of the tag being queried in this CIP request::
 
     [<CIP_Path  wordsize=3 path=class 0xb2,instance 0x22 |>]
