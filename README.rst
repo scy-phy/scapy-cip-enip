@@ -1,4 +1,5 @@
-Ethernet/IP dissectors for scapy
+================================
+Ethernet/IP dissectors for Scapy
 ================================
 
 This repository contains a Python library which can be used to interact with components of a network using ENIP (Ethernet/IP) and CIP (Common Industrial Protocol) protocols.
@@ -10,14 +11,14 @@ Therefore, it mostly implements a subset of CIP specification, which is used in 
 
 
 Requirements
-------------
+============
 
 * Python 2.7
 * Scapy (http://www.secdev.org/projects/scapy/)
 
 
 Example of packet decoding
---------------------------
+==========================
 
 Here is the raw content of a packet sent to a PLC to query a tag (in SWaT), as seen by an hexadecimal viewer::
 
@@ -116,7 +117,7 @@ For example, adding ``print(pkt[cip.CIP].path)`` at the end of the script shows 
 
 
 Interfacing with a PLC
-----------------------
+======================
 
 The scapy dissectors can be used to craft packet and therefore communicate with a PLC using ENIP and CIP.
 These communications require several handshakes:
