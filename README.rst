@@ -6,7 +6,8 @@ This repository contains a Python library which can be used to interact with com
 It uses scapy (http://www.secdev.org/projects/scapy/) to implement packet dissectors which are able to decode a part of the network traffic.
 These dissectors can also be used to craft packets, which allows directly communicating with the PLCs (Programmable Logic Controllers) of the network.
 
-This project has been created to help analyzing the behavior of SWaT, a water treatment testbed built at SUTD (Singapore University of Technology and Design).
+This project has been created to help analyzing the behavior of SWaT, a water treatment testbed built at SUTD (Singapore University of Technology and Design). For more information on our work, visit http://scy-phy.net
+
 Therefore, it mostly implements a subset of CIP specification, which is used in this system.
 
 
